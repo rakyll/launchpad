@@ -17,6 +17,7 @@ package launchpad
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/rakyll/portmidi"
 )
@@ -53,11 +54,14 @@ func (l *Launchpad) Listen() <-chan Drum {
 		for {
 			drums, err := pad.Read()
 			if err != nil {
-				return
+				continue
 			}
 			for i := range drums {
 				ch <- drums[i]
 			}
+			// sleep for a while before the new polling tick,
+			// otherwise operation is too intensive and blocking
+			time.Sleep(10 * time.Millisecond)
 		}
 	}(l, ch)
 	return ch
