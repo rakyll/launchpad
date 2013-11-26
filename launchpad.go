@@ -47,8 +47,9 @@ func New() (*Launchpad, error) {
 	return &Launchpad{inputStream: inStream, outputStream: outStream}, nil
 }
 
-func (l *Launchpad) Listen(ch chan<- Drum) {
-	go func(pad *Launchpad) {
+func (l *Launchpad) Listen() <-chan Drum {
+	ch := make(chan Drum)
+	go func(pad *Launchpad, ch chan Drum) {
 		for {
 			drums, err := pad.Read()
 			if err != nil {
@@ -58,7 +59,8 @@ func (l *Launchpad) Listen(ch chan<- Drum) {
 				ch <- drums[i]
 			}
 		}
-	}(l)
+	}(l, ch)
+	return ch
 }
 
 func (l *Launchpad) Read() (drums []Drum, err error) {
