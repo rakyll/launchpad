@@ -26,6 +26,11 @@ type Launchpad struct {
 	outputStream *portmidi.Stream
 }
 
+type Drum struct {
+	X int
+	Y int
+}
+
 func New() (*Launchpad, error) {
 	input, output, err := discover()
 	if err != nil {
@@ -42,12 +47,33 @@ func New() (*Launchpad, error) {
 	return &Launchpad{inputStream: inStream, outputStream: outStream}, nil
 }
 
-func (l *Launchpad) Listen() {
-	panic("not implemented")
+func (l *Launchpad) Listen(ch chan<- Drum) {
+	go func(pad *Launchpad) {
+		for {
+			drums, err := pad.Read()
+			if err != nil {
+				return
+			}
+			for i := range drums {
+				ch <- drums[i]
+			}
+		}
+	}(l)
 }
 
-func (l *Launchpad) Read() (events []*portmidi.Event, err error) {
-	return l.inputStream.Read(64)
+func (l *Launchpad) Read() (drums []Drum, err error) {
+	var evts []*portmidi.Event
+	if evts, err = l.inputStream.Read(64); err != nil {
+		return
+	}
+	drums = make([]Drum, len(evts))
+	for i, evt := range evts {
+		var x, y int64
+		x = evt.Data1 % 16
+		y = (evt.Data1 / 4) - 9
+		drums[i] = Drum{X: int(x), Y: int(y)}
+	}
+	return
 }
 
 func (l *Launchpad) Light(x, y, g, r int) error {
