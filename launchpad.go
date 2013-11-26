@@ -52,6 +52,9 @@ func (l *Launchpad) Listen() <-chan Drum {
 	ch := make(chan Drum)
 	go func(pad *Launchpad, ch chan Drum) {
 		for {
+			// sleep for a while before the new polling tick,
+			// otherwise operation is too intensive and blocking
+			time.Sleep(10 * time.Millisecond)
 			drums, err := pad.Read()
 			if err != nil {
 				continue
@@ -59,9 +62,6 @@ func (l *Launchpad) Listen() <-chan Drum {
 			for i := range drums {
 				ch <- drums[i]
 			}
-			// sleep for a while before the new polling tick,
-			// otherwise operation is too intensive and blocking
-			time.Sleep(10 * time.Millisecond)
 		}
 	}(l, ch)
 	return ch
