@@ -27,7 +27,7 @@ type Launchpad struct {
 	outputStream *portmidi.Stream
 }
 
-type Drum struct {
+type Hit struct {
 	X int
 	Y int
 }
@@ -48,26 +48,26 @@ func New() (*Launchpad, error) {
 	return &Launchpad{inputStream: inStream, outputStream: outStream}, nil
 }
 
-func (l *Launchpad) Listen() <-chan Drum {
-	ch := make(chan Drum)
-	go func(pad *Launchpad, ch chan Drum) {
+func (l *Launchpad) Listen() <-chan Hit {
+	ch := make(chan Hit)
+	go func(pad *Launchpad, ch chan Hit) {
 		for {
 			// sleep for a while before the new polling tick,
 			// otherwise operation is too intensive and blocking
 			time.Sleep(10 * time.Millisecond)
-			drums, err := pad.Read()
+			Hits, err := pad.Read()
 			if err != nil {
 				continue
 			}
-			for i := range drums {
-				ch <- drums[i]
+			for i := range Hits {
+				ch <- Hits[i]
 			}
 		}
 	}(l, ch)
 	return ch
 }
 
-func (l *Launchpad) Read() (drums []Drum, err error) {
+func (l *Launchpad) Read() (Hits []Hit, err error) {
 	var evts []*portmidi.Event
 	if evts, err = l.inputStream.Read(64); err != nil {
 		return
@@ -77,7 +77,7 @@ func (l *Launchpad) Read() (drums []Drum, err error) {
 			var x, y int64
 			x = evt.Status % 8
 			y = 7 - ((evt.Status - x) / 16)
-			drums = append(drums, Drum{X: int(x), Y: int(y)})
+			Hits = append(Hits, Hit{X: int(x), Y: int(y)})
 		}
 	}
 	return
