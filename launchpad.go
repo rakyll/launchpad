@@ -72,12 +72,13 @@ func (l *Launchpad) Read() (drums []Drum, err error) {
 	if evts, err = l.inputStream.Read(64); err != nil {
 		return
 	}
-	drums = make([]Drum, len(evts))
-	for i, evt := range evts {
-		var x, y int64
-		x = evt.Data1 % 16
-		y = (evt.Data1 / 4) - 9
-		drums[i] = Drum{X: int(x), Y: int(y)}
+	for _, evt := range evts {
+		if evt.Data1 > 0 {
+			var x, y int64
+			x = evt.Status % 8
+			y = 7 - ((evt.Status - x) / 16)
+			drums = append(drums, Drum{X: int(x), Y: int(y)})
+		}
 	}
 	return
 }
