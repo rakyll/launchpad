@@ -36,7 +36,15 @@ func main() {
 	}
 
 	grid = newGrid()
-	instruments = []int{39, 38, 40, 51, 42, 58, 46, 81}
+	instruments = []int{
+		70, // maracas
+		38, // snare 1
+		40, // snare 2
+		51, // ride cymbal
+		42, // closed hi-hat
+		58, // vibra slap
+		46, // open hi-hat
+		81} // open triangle
 
 	// load an initial drum pattern
 	// hi-hats
