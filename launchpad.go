@@ -55,19 +55,19 @@ func (l *Launchpad) Listen() <-chan Hit {
 			// sleep for a while before the new polling tick,
 			// otherwise operation is too intensive and blocking
 			time.Sleep(10 * time.Millisecond)
-			Hits, err := pad.Read()
+			hits, err := pad.Read()
 			if err != nil {
 				continue
 			}
-			for i := range Hits {
-				ch <- Hits[i]
+			for i := range hits {
+				ch <- hits[i]
 			}
 		}
 	}(l, ch)
 	return ch
 }
 
-func (l *Launchpad) Read() (Hits []Hit, err error) {
+func (l *Launchpad) Read() (hits []Hit, err error) {
 	var evts []*portmidi.Event
 	if evts, err = l.inputStream.Read(64); err != nil {
 		return
@@ -77,7 +77,7 @@ func (l *Launchpad) Read() (Hits []Hit, err error) {
 			var x, y int64
 			x = evt.Status % 8
 			y = 7 - ((evt.Status - x) / 16)
-			Hits = append(Hits, Hit{X: int(x), Y: int(y)})
+			hits = append(hits, Hit{X: int(x), Y: int(y)})
 		}
 	}
 	return
