@@ -68,7 +68,7 @@ func (l *Launchpad) Listen() <-chan Hit {
 }
 
 func (l *Launchpad) Read() (hits []Hit, err error) {
-	var evts []*portmidi.Event
+	var evts []portmidi.Event
 	if evts, err = l.inputStream.Read(64); err != nil {
 		return
 	}
