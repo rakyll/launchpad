@@ -44,6 +44,25 @@ on graceful termination.
 ~~~ go
 pad.Cleanup()
 ~~~
+
+## Demo: Light Every Touch
+
+![A demo](https://googledrive.com/host/0ByfSjdPVs9MZbkhjeUhMYzRTeEE/demo.gif)
+
+A simple program to light every touch:
+
+~~~ go
+pad, _ := launchpad.New()
+pad.Reset()
+
+ch := pad.Listen()
+for {
+        select {
+        case hit := <-ch:
+                pad.Light(hit.X, hit.Y, 3, 3)
+        }
+}
+~~~
     
 ## License
     Copyright 2013 Google Inc. All Rights Reserved.
