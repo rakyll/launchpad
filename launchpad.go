@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package launchpad provides interfaces to talk to
+// Novation Launchpads via MIDI in and out.
 package launchpad
 
 import (
@@ -22,16 +24,21 @@ import (
 	"github.com/rakyll/portmidi"
 )
 
+// Launchpad represents a device with an input and output MIDI stream.
 type Launchpad struct {
 	inputStream  *portmidi.Stream
 	outputStream *portmidi.Stream
 }
 
+// Hit represents physical touches to Launchpad buttons.
 type Hit struct {
 	X int
 	Y int
 }
 
+// Creates a new Launchpad and initializes an input and output
+// stream to the currently connected device. If there are no
+// devices are connected, it returns an error.
 func New() (*Launchpad, error) {
 	input, output, err := discover()
 	if err != nil {
@@ -48,6 +55,7 @@ func New() (*Launchpad, error) {
 	return &Launchpad{inputStream: inStream, outputStream: outStream}, nil
 }
 
+// Listens the input stream for hits.
 func (l *Launchpad) Listen() <-chan Hit {
 	ch := make(chan Hit)
 	go func(pad *Launchpad, ch chan Hit) {
@@ -67,6 +75,7 @@ func (l *Launchpad) Listen() <-chan Hit {
 	return ch
 }
 
+// Reads hits from the input stream. It returns max 64 hits for each read.
 func (l *Launchpad) Read() (hits []Hit, err error) {
 	var evts []portmidi.Event
 	if evts, err = l.inputStream.Read(64); err != nil {
@@ -83,6 +92,8 @@ func (l *Launchpad) Read() (hits []Hit, err error) {
 	return
 }
 
+// Lights the button at x,y with the given greend and red values.
+// x and y are [0, 7], g and r are [0, 3]
 func (l *Launchpad) Light(x, y, g, r int) error {
 	note := int64(x + 16*(7-y))
 	velocity := int64(16*g + r + 8 + 4)
@@ -100,6 +111,8 @@ func (l *Launchpad) Cleanup() error {
 	return l.outputStream.Close()
 }
 
+// discovers the currently connected Launchpad device
+// as a MIDI device.
 func discover() (input portmidi.DeviceId, output portmidi.DeviceId, err error) {
 	in := -1
 	out := -1
