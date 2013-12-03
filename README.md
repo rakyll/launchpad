@@ -14,6 +14,9 @@ creating an input and output MIDI device and name them as Launchpad.
 if pad, err = launchpad.New(); err != nil {
     log.Error("error while initializing launchpad")
 }
+
+// turn off all of the lights, before we begin
+pad.Reset()
 ~~~
 
 ### Light buttons
