@@ -2,7 +2,7 @@
 A package allows you to talk to your Novation Launchpad in Go. Light buttons
 or read your touches.
 
-~~~ go
+~~~ sh
 go get github.com/rakyll/launchpad
 ~~~
 
@@ -57,10 +57,10 @@ pad.Reset()
 
 ch := pad.Listen()
 for {
-        select {
-        case hit := <-ch:
-                pad.Light(hit.X, hit.Y, 3, 3)
-        }
+	select {
+	case hit := <-ch:
+		pad.Light(hit.X, hit.Y, 3, 3)
+	}
 }
 ~~~
     
