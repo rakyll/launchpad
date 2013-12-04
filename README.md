@@ -45,7 +45,7 @@ on graceful termination.
 pad.Cleanup()
 ~~~
 
-## Demo: Light Every Touch
+## Demo: Light your touchs
 
 ![A demo](https://googledrive.com/host/0ByfSjdPVs9MZbkhjeUhMYzRTeEE/demo.gif)
 
