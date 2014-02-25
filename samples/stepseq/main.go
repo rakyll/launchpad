@@ -73,7 +73,11 @@ func main() {
 	go func() {
 		for {
 			hit := <-ch
-			log.Println("drum toggled", hit)
+			log.Println("drum toggled at", hit)
+			if hit.Y == -1 || hit.X > 7 {
+				// a controller button is hit
+				continue
+			}
 			grid[hit.X][hit.Y] = !grid[hit.X][hit.Y]
 			if !grid[hit.X][hit.Y] {
 				// turn off immediately

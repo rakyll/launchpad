@@ -78,14 +78,20 @@ func (l *Launchpad) Listen() <-chan Hit {
 // Reads hits from the input stream. It returns max 64 hits for each read.
 func (l *Launchpad) Read() (hits []Hit, err error) {
 	var evts []portmidi.Event
-	if evts, err = l.inputStream.Read(64); err != nil {
+	if evts, err = l.inputStream.Read(1024); err != nil {
 		return
 	}
 	for _, evt := range evts {
-		if evt.Data1 > 0 {
+		if evt.Data2 > 0 {
 			var x, y int64
-			x = evt.Status % 8
-			y = 7 - ((evt.Status - x) / 16)
+			if evt.Status == 176 {
+				// top row button
+				x = evt.Data1 - 104
+				y = -1
+			} else {
+				x = evt.Data1 % 16
+				y = (evt.Data1 - x) / 16
+			}
 			hits = append(hits, Hit{X: int(x), Y: int(y)})
 		}
 	}
@@ -95,7 +101,7 @@ func (l *Launchpad) Read() (hits []Hit, err error) {
 // Lights the button at x,y with the given greend and red values.
 // x and y are [0, 7], g and r are [0, 3]
 func (l *Launchpad) Light(x, y, g, r int) error {
-	note := int64(x + 16*(7-y))
+	note := int64(x + 16*y)
 	velocity := int64(16*g + r + 8 + 4)
 	return l.outputStream.WriteShort(0x90, note, velocity)
 }
