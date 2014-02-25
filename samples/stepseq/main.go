@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"time"
 
@@ -20,14 +21,17 @@ var (
 	instruments []int
 )
 
+var flagOutput = flag.Int("o", 0, "The output MIDI device ID")
+
 func main() {
+	flag.Parse()
 
 	var err error
 	if err = portmidi.Initialize(); err != nil {
 		log.Fatal("error while initializing portmidi", err)
 	}
 
-	if out, err = portmidi.NewOutputStream(12, 1024, 0); err != nil {
+	if out, err = portmidi.NewOutputStream(portmidi.DeviceId(*flagOutput), 1024, 0); err != nil {
 		log.Fatal("error while initializing connection to midi out stream")
 	}
 
@@ -99,7 +103,7 @@ func drawAndPlay(x int) {
 		for y := 0; y < NumberofVGrids; y++ {
 			if grid[x1][y] {
 				if x == x1 {
-					out.WriteShort(int64(0x90+9), int64(instruments[y]), 100)
+					//out.WriteShort(int64(0x90+9), int64(instruments[y]), 100)
 				}
 				pad.Light(x1, y, 3, 0)
 			}
