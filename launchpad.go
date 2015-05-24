@@ -36,10 +36,10 @@ type Hit struct {
 	Y int
 }
 
-// Creates a new Launchpad and initializes an input and output
+// Open opens a connection Launchpad and initializes an input and output
 // stream to the currently connected device. If there are no
 // devices are connected, it returns an error.
-func New() (*Launchpad, error) {
+func Open() (*Launchpad, error) {
 	input, output, err := discover()
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func New() (*Launchpad, error) {
 	return &Launchpad{inputStream: inStream, outputStream: outStream}, nil
 }
 
-// Listens the input stream for hits.
+// Listen listens the input stream for hits.
 func (l *Launchpad) Listen() <-chan Hit {
 	ch := make(chan Hit)
 	go func(pad *Launchpad, ch chan Hit) {
@@ -75,7 +75,7 @@ func (l *Launchpad) Listen() <-chan Hit {
 	return ch
 }
 
-// Reads hits from the input stream. It returns max 64 hits for each read.
+// Read reads hits from the input stream. It returns max 64 hits for each read.
 func (l *Launchpad) Read() (hits []Hit, err error) {
 	var evts []portmidi.Event
 	if evts, err = l.inputStream.Read(1024); err != nil {
@@ -98,7 +98,7 @@ func (l *Launchpad) Read() (hits []Hit, err error) {
 	return
 }
 
-// Lights the button at x,y with the given greend and red values.
+// Light lights the button at x,y with the given greend and red values.
 // x and y are [0, 7], g and r are [0, 3]
 func (l *Launchpad) Light(x, y, g, r int) error {
 	note := int64(x + 16*y)
@@ -110,11 +110,10 @@ func (l *Launchpad) Reset() error {
 	return l.outputStream.WriteShort(0xb0, 0, 0)
 }
 
-func (l *Launchpad) Cleanup() error {
-	if err := l.inputStream.Close(); err != nil {
-		return err
-	}
-	return l.outputStream.Close()
+func (l *Launchpad) Close() error {
+	l.inputStream.Close()
+	l.outputStream.Close()
+	return nil
 }
 
 // discovers the currently connected Launchpad device
