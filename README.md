@@ -1,4 +1,4 @@
-# launchpad
+# launchpad [![GoDoc](https://godoc.org/github.com/rakyll/launchpad?status.svg)](https://godoc.org/github.com/rakyll/launchpad)
 A package allows you to talk to your Novation Launchpad in Go. Light buttons
 or read your touches.
 
