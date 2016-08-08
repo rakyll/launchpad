@@ -118,11 +118,11 @@ func (l *Launchpad) Close() error {
 
 // discovers the currently connected Launchpad device
 // as a MIDI device.
-func discover() (input portmidi.DeviceId, output portmidi.DeviceId, err error) {
+func discover() (input portmidi.DeviceID, output portmidi.DeviceID, err error) {
 	in := -1
 	out := -1
 	for i := 0; i < portmidi.CountDevices(); i++ {
-		info := portmidi.GetDeviceInfo(portmidi.DeviceId(i))
+		info := portmidi.Info(portmidi.DeviceID(i))
 		if strings.Contains(info.Name, "Launchpad") {
 			if info.IsInputAvailable {
 				in = i
@@ -135,8 +135,8 @@ func discover() (input portmidi.DeviceId, output portmidi.DeviceId, err error) {
 	if in == -1 || out == -1 {
 		err = errors.New("launchpad: no launchpad is connected")
 	} else {
-		input = portmidi.DeviceId(in)
-		output = portmidi.DeviceId(out)
+		input = portmidi.DeviceID(in)
+		output = portmidi.DeviceID(out)
 	}
 	return
 }
