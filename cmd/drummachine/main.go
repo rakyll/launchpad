@@ -31,11 +31,11 @@ func main() {
 		log.Fatal("error while initializing portmidi", err)
 	}
 
-	if out, err = portmidi.NewOutputStream(portmidi.DeviceId(*flagOutput), 1024, 0); err != nil {
+	if out, err = portmidi.NewOutputStream(portmidi.DeviceID(*flagOutput), 1024, 0); err != nil {
 		log.Fatal("error while initializing connection to midi out stream")
 	}
 
-	if pad, err = launchpad.New(); err != nil {
+	if pad, err = launchpad.Open(); err != nil {
 		log.Fatal("error while initializing connection to launchpad", err)
 	}
 
