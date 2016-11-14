@@ -105,7 +105,7 @@ func (l *Launchpad) Read() (hits []Hit, err error) {
 func (l *Launchpad) Light(x, y, g, r int) error {
 	note := int64(x + 16*y)
 	velocity := int64(16*g + r + 8 + 4)
-	if y == 8 {
+	if y >= 8 {
 		return l.lightAutomap(x, velocity)
 	}
 	return l.outputStream.WriteShort(0x90, note, velocity)
