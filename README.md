@@ -11,7 +11,7 @@ Initialize a new Launchpad. If there are no currently connected Launchpad
 device, initialization will fail with an error. You can fake a device by
 creating an input and output MIDI device and name them as Launchpad.
 ~~~ go
-if pad, err = launchpad.New(); err != nil {
+if pad, err = launchpad.Open(); err != nil {
     log.Error("error while initializing launchpad")
 }
 
@@ -28,7 +28,7 @@ pad.Light(0, 0, 3, 0) // lights the bottom left button with bright green
 The coordinate system is illustrated below.
 ~~~
 +--------- arrow keys -----------+  +--- mode keys ---+
-{0,-1} {1,-1} {2,-1} {3,-1} {4,-1} {5,-1} {6,-1} {7,-1} | ableton
+{0, 8} {1, 8} {2, 8} {3, 8} {4, 8} {5, 8} {6, 8} {7, 8} | ableton
 ----------------------------------------------------------------
 {0, 0} {1, 0} {2, 0} {3, 0} {4, 0} {5, 0} {6, 0} {7, 0} | {8, 0} vol
 ----------------------------------------------------------------

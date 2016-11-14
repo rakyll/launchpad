@@ -87,7 +87,7 @@ func (l *Launchpad) Read() (hits []Hit, err error) {
 			if evt.Status == 176 {
 				// top row button
 				x = evt.Data1 - 104
-				y = -1
+				y = 8
 			} else {
 				x = evt.Data1 % 16
 				y = (evt.Data1 - x) / 16
@@ -99,11 +99,21 @@ func (l *Launchpad) Read() (hits []Hit, err error) {
 }
 
 // Light lights the button at x,y with the given greend and red values.
-// x and y are [0, 7], g and r are [0, 3]
+// x and y are [0, 8], g and r are [0, 3]
+// Note that x=8 corresponds to the round scene buttons on the right side of the device,
+// and y=8 corresponds to the round automap buttons on the top of the device.
 func (l *Launchpad) Light(x, y, g, r int) error {
 	note := int64(x + 16*y)
 	velocity := int64(16*g + r + 8 + 4)
+	if y >= 8 {
+		return l.lightAutomap(x, velocity)
+	}
 	return l.outputStream.WriteShort(0x90, note, velocity)
+}
+
+// lightAutomap lights the top row of buttons.
+func (l *Launchpad) lightAutomap(x int, velocity int64) error {
+	return l.outputStream.WriteShort(176, int64(x+104), velocity)
 }
 
 func (l *Launchpad) Reset() error {
