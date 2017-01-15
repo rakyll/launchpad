@@ -61,11 +61,11 @@ ch := pad.Listen()
 hit := <-ch
 ~~~
 
-### Cleanup
-Cleanup your input and output streams once you're done. Likely to be called
+### Close
+Close your input and output streams once you're done. Likely to be called
 on graceful termination.
 ~~~ go
-pad.Cleanup()
+pad.Close()
 ~~~
 
 ## Demo: Light your touchs
