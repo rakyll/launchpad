@@ -40,6 +40,8 @@ type Hit struct {
 // stream to the currently connected device. If there are no
 // devices are connected, it returns an error.
 func Open() (*Launchpad, error) {
+	portmidi.Initialize()
+
 	input, output, err := discover()
 	if err != nil {
 		return nil, err
@@ -121,6 +123,7 @@ func (l *Launchpad) Reset() error {
 }
 
 func (l *Launchpad) Close() error {
+	portmidi.Terminate()
 	l.inputStream.Close()
 	l.outputStream.Close()
 	return nil
