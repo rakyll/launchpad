@@ -70,8 +70,6 @@ pad.Cleanup()
 
 ## Demo: Light your touchs
 
-![A demo](https://googledrive.com/host/0ByfSjdPVs9MZbkhjeUhMYzRTeEE/demo.gif)
-
 A simple program to light every touch:
 
 ~~~ go
