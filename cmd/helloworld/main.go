@@ -21,6 +21,6 @@ func main() {
 		hit := <-ch
 		log.Printf("Button pressed at <x=%d, y=%d>", hit.X, hit.Y)
 		// Turn to green.
-		pad.Light(hit.X, hit.Y, 2, 0)
+		pad.Light(hit.X, hit.Y, 3, 0)
 	}
 }
