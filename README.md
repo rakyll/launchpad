@@ -19,7 +19,8 @@ Initialize a new Launchpad. If there are no currently connected Launchpad
 device, initialization will fail with an error. You can fake a device by
 creating an input and output MIDI device and name them as Launchpad.
 ~~~ go
-if pad, err = launchpad.Open(); err != nil {
+pad, err = launchpad.Open();
+if err != nil {
     log.Fatalf("error while initializing launchpad: %v", err)
 }
 
@@ -27,11 +28,7 @@ if pad, err = launchpad.Open(); err != nil {
 pad.Reset()
 ~~~
 
-### Light buttons
-
-~~~ go
-pad.Light(0, 0, 3, 0) // lights the bottom left button with bright green
-~~~
+### Coordinate system
 
 The coordinate system is illustrated below.
 ~~~
@@ -56,32 +53,15 @@ The coordinate system is illustrated below.
 ----------------------------------------------------------------
 ~~~
 
-### Read/listen for touches
-
-~~~ go
-hits, err := pad.Read() // reads at most 64 hits
-for _, hit := range hits {
-    log.Printf("touch at (%d, %d)", hit.X, hit.Y)
-}
-
-// or alternatively you can listen for hits
-ch := pad.Listen()
-hit := <-ch
-~~~
-
-### Cleanup
-Cleanup your input and output streams once you're done. Likely to be called
-on graceful termination.
-~~~ go
-pad.Cleanup()
-~~~
-
 ## Demo: Light your touchs
 
 A simple program to light every touch:
 
 ~~~ go
-pad, _ := launchpad.New()
+pad, err := launchpad.Open()
+if err != nil {
+    log.Fatal(err)
+}
 pad.Reset()
 
 ch := pad.Listen()
