@@ -45,11 +45,13 @@ func Open() (*Launchpad, error) {
 		return nil, err
 	}
 
-	var inStream, outStream *portmidi.Stream
-	if inStream, err = portmidi.NewInputStream(input, 1024); err != nil {
+	inStream, err := portmidi.NewInputStream(input, 1024)
+	if err != nil {
 		return nil, err
 	}
-	if outStream, err = portmidi.NewOutputStream(output, 1024, 0); err != nil {
+	outStream, err := portmidi.NewOutputStream(output, 1024, 0)
+	if err != nil {
+		inStream.Close()
 		return nil, err
 	}
 	return &Launchpad{inputStream: inStream, outputStream: outStream}, nil
