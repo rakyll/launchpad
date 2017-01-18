@@ -6,13 +6,21 @@ or read your touches.
 go get github.com/rakyll/launchpad
 ~~~
 
+Portmidi is required to use this package.
+
+```
+$ apt-get install libportmidi-dev
+# or
+$ brew install portmidi
+```
+
 ## Usage
 Initialize a new Launchpad. If there are no currently connected Launchpad
 device, initialization will fail with an error. You can fake a device by
 creating an input and output MIDI device and name them as Launchpad.
 ~~~ go
 if pad, err = launchpad.Open(); err != nil {
-    log.Error("error while initializing launchpad")
+    log.Fatalf("error while initializing launchpad: %v", err)
 }
 
 // turn off all of the lights
