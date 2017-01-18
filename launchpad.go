@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package launchpad provides interfaces to talk to
-// Novation Launchpads via MIDI in and out.
+// Package launchpad provides interfaces to talk to Novation Launchpads via MIDI in and out.
 package launchpad
 
 import (
@@ -39,6 +38,7 @@ type Hit struct {
 // Open opens a connection Launchpad and initializes an input and output
 // stream to the currently connected device. If there are no
 // devices are connected, it returns an error.
+// Each Launchpad should be closed by calling Close when no longer in use.
 func Open() (*Launchpad, error) {
 	input, output, err := discover()
 	if err != nil {
@@ -120,14 +120,15 @@ func (l *Launchpad) Reset() error {
 	return l.outputStream.WriteShort(0xb0, 0, 0)
 }
 
+// Close closes the underlying resources the launchpad is using.
+// Users should call Close as soon as they no longer need the launchpad.
 func (l *Launchpad) Close() error {
 	l.inputStream.Close()
 	l.outputStream.Close()
 	return nil
 }
 
-// discovers the currently connected Launchpad device
-// as a MIDI device.
+// discovers the currently connected Launchpad device as a MIDI device.
 func discover() (input portmidi.DeviceID, output portmidi.DeviceID, err error) {
 	in := -1
 	out := -1
