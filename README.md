@@ -23,8 +23,9 @@ creating an input and output MIDI device and name them as Launchpad.
 ~~~ go
 pad, err = launchpad.Open();
 if err != nil {
-    log.Fatalf("error while initializing launchpad: %v", err)
+    log.Fatalf("Error initializing launchpad: %v", err)
 }
+defer pad.Close()
 
 // turn off all of the lights
 pad.Reset()
@@ -64,6 +65,8 @@ pad, err := launchpad.Open()
 if err != nil {
     log.Fatal(err)
 }
+defer pad.Close()
+
 pad.Reset()
 
 ch := pad.Listen()
