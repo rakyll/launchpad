@@ -80,7 +80,7 @@ func (l *Launchpad) Listen() <-chan Hit {
 // Read reads hits from the input stream. It returns max 64 hits for each read.
 func (l *Launchpad) Read() (hits []Hit, err error) {
 	var evts []portmidi.Event
-	if evts, err = l.inputStream.Read(1024); err != nil {
+	if evts, err = l.inputStream.Read(64); err != nil {
 		return
 	}
 	for _, evt := range evts {
