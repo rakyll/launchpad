@@ -28,7 +28,7 @@ if err != nil {
 defer pad.Close()
 
 // turn off all of the lights
-pad.Reset()
+pad.Clear()
 ~~~
 
 ### Coordinate system
@@ -67,7 +67,7 @@ if err != nil {
 }
 defer pad.Close()
 
-pad.Reset()
+pad.Clear()
 
 ch := pad.Listen()
 for {

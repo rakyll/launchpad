@@ -11,7 +11,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("error while openning connection to launchpad: %v", err)
 	}
-	pad.Reset()
+	defer pad.Close()
+
+	pad.Clear()
 
 	// Set <0,0> to yellow.
 	pad.Light(0, 0, 2, 2)

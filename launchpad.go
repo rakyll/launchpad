@@ -118,7 +118,8 @@ func (l *Launchpad) lightAutomap(x int, velocity int64) error {
 	return l.outputStream.WriteShort(176, int64(x+104), velocity)
 }
 
-func (l *Launchpad) Reset() error {
+// Clear turns off all the LEDs on the Launchpad.
+func (l *Launchpad) Clear() error {
 	return l.outputStream.WriteShort(0xb0, 0, 0)
 }
 
