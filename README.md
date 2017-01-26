@@ -2,6 +2,8 @@
 A package allows you to talk to your Novation Launchpad in Go. Light buttons
 or read your touches.
 
+This library is currently only working with [MK2 (Green-Red Launchpads)](https://www.amazon.com/Novation-Launchpad-Compact-Controller-Ableton/dp/B00W5F3GJ0/ref=pd_sbs_267_1?_encoding=UTF8&pd_rd_i=B00W5F3GJ0&pd_rd_r=YXPHNPQ3SDPVSZBQSPF1&pd_rd_w=p6G73&pd_rd_wg=orYDX&psc=1&refRID=YXPHNPQ3SDPVSZBQSPF1) but we are trying to support multiple models and layouts.
+
 ~~~ sh
 go get github.com/rakyll/launchpad
 ~~~
