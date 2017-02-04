@@ -42,11 +42,11 @@ func TestHit(t *testing.T) {
 
 	hit := <-hits
 
-	if expected, got := 8, hit.X; expected != got {
+	if expected, got := uint8(8), hit.X; expected != got {
 		fmt.Printf("expected x=%d, got x=%d\n", expected, got)
 		t.Fail()
 	}
-	if expected, got := 7, hit.Y; expected != got {
+	if expected, got := uint8(7), hit.Y; expected != got {
 		fmt.Printf("expected y=%d, got y=%d\n", expected, got)
 		t.Fail()
 	}

@@ -58,6 +58,17 @@ func (l *Launchpad) Close() error {
 	return l.Device.Close()
 }
 
+// Hits returns a channel that emits when the launchpad buttons are hit.
+func (l *Launchpad) Hits() (<-chan Hit, error) {
+	packets, err := l.Packets()
+	if err != nil {
+		return nil, err
+	}
+	hits := make(chan Hit)
+	go relayPackets(packets, hits)
+	return hits, nil
+}
+
 // Light lights the button at x,y with the given greend and red values.
 // x and y are [0, 8], g and r are [0, 3]
 // Note that x=8 corresponds to the round scene buttons on the right side of the device,
@@ -72,17 +83,6 @@ func (l *Launchpad) Light(x, y uint8, color Color) error {
 	}
 	_, err := l.Write([]byte{0x90, note, velocity})
 	return err
-}
-
-// Hits returns a channel that emits when the launchpad buttons are hit.
-func (l *Launchpad) Hits() (<-chan Hit, error) {
-	packets, err := l.Packets()
-	if err != nil {
-		return nil, err
-	}
-	hits := make(chan Hit)
-	go relayPackets(packets, hits)
-	return hits, nil
 }
 
 // lightAutomap lights the top row of buttons.
@@ -100,15 +100,20 @@ func (l *Launchpad) Reset() error {
 // relayPackets turns packets into hits.
 func relayPackets(packets <-chan midi.Packet, hits chan<- Hit) {
 	for packet := range packets {
+		if packet[2] == 0 {
+			continue
+		}
 		var x, y uint8
 
 		if packet[0] == 176 {
 			// top row button
 			x = packet[1] - 104
 			y = 8
-		} else {
+		} else if packet[0] == 144 {
 			x = packet[1] % 16
 			y = (packet[1] - x) / 16
+		} else {
+			continue
 		}
 		hits <- Hit{X: x, Y: y}
 	}
