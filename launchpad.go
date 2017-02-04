@@ -27,8 +27,8 @@ type Color struct {
 
 // Hit represents physical touches to Launchpad buttons.
 type Hit struct {
-	X int
-	Y int
+	X uint8
+	Y uint8
 }
 
 // Open opens a connection Launchpad and initializes an input and output
@@ -110,9 +110,6 @@ func relayPackets(packets <-chan midi.Packet, hits chan<- Hit) {
 			x = packet[1] % 16
 			y = (packet[1] - x) / 16
 		}
-		hits <- Hit{
-			X: int(x),
-			Y: int(y),
-		}
+		hits <- Hit{X: x, Y: y}
 	}
 }
