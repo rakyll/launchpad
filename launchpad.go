@@ -11,9 +11,6 @@ const (
 	Full
 )
 
-// MessageSize is the number of bytes in a launchpad MIDI message.
-const MessageSize = 3
-
 // Launchpad represents a device with an input and output MIDI stream.
 type Launchpad struct {
 	*midi.Device
@@ -67,8 +64,8 @@ func (l *Launchpad) Close() error {
 // and y=8 corresponds to the round automap buttons on the top of the device.
 func (l *Launchpad) Light(x, y uint8, color Color) error {
 	var (
-		note     = uint8(x + 16*y)
-		velocity = uint8(16*color.Green + color.Red + 8 + 4)
+		note     = x + 16*y
+		velocity = 16*color.Green + color.Red + 8 + 4
 	)
 	if y >= 8 {
 		return l.lightAutomap(x, velocity)

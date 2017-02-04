@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestHit(t *testing.T) {
-	lp.Reset()
+	_ = lp.Reset()
 
 	hits, err := lp.Hits()
 	if err != nil {
@@ -54,32 +54,38 @@ func TestHit(t *testing.T) {
 		fmt.Println("Great!")
 	}
 
-	lp.Reset()
+	_ = lp.Reset()
 }
 
 // TestLight flashes the launchpad for a short time.
 func TestLight(t *testing.T) {
-	lp.Reset()
+	_ = lp.Reset()
 
 	x, y := uint8(0), uint8(8)
 
-	lp.Light(x, y, launchpad.Color{
+	if err := lp.Light(x, y, launchpad.Color{
 		Green: launchpad.Full,
 		Red:   launchpad.Off,
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	time.Sleep(500 * time.Millisecond)
 
-	lp.Light(x, y, launchpad.Color{
+	if err := lp.Light(x, y, launchpad.Color{
 		Green: launchpad.Off,
 		Red:   launchpad.Full,
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	time.Sleep(500 * time.Millisecond)
 
-	lp.Light(x, y, launchpad.Color{
+	if err := lp.Light(x, y, launchpad.Color{
 		Green: launchpad.Full,
 		Red:   launchpad.Full,
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	time.Sleep(500 * time.Millisecond)
 
-	lp.Reset()
+	_ = lp.Reset()
 }
