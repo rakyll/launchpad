@@ -31,6 +31,32 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func TestHit(t *testing.T) {
+	lp.Reset()
+
+	hits, err := lp.Hits()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("Please hit the bottom scene launch button")
+
+	hit := <-hits
+
+	if expected, got := 8, hit.X; expected != got {
+		fmt.Printf("expected x=%d, got x=%d\n", expected, got)
+		t.Fail()
+	}
+	if expected, got := 7, hit.Y; expected != got {
+		fmt.Printf("expected y=%d, got y=%d\n", expected, got)
+		t.Fail()
+	}
+	if !t.Failed() {
+		fmt.Println("Great!")
+	}
+
+	lp.Reset()
+}
+
 // TestLight flashes the launchpad for a short time.
 func TestLight(t *testing.T) {
 	lp.Reset()

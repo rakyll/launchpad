@@ -22,9 +22,16 @@ type Launchpad struct {
 // Button represents a button on the Launchpad.
 type Button [2]int
 
+// Color represents the color of a launcpad button.
 type Color struct {
 	Green uint8
 	Red   uint8
+}
+
+// Hit represents physical touches to Launchpad buttons.
+type Hit struct {
+	X int
+	Y int
 }
 
 // Open opens a connection Launchpad and initializes an input and output
@@ -70,26 +77,45 @@ func (l *Launchpad) Light(x, y uint8, color Color) error {
 	return err
 }
 
+// Hits returns a channel that emits when the launchpad buttons are hit.
+func (l *Launchpad) Hits() (<-chan Hit, error) {
+	packets, err := l.Packets()
+	if err != nil {
+		return nil, err
+	}
+	hits := make(chan Hit)
+	go relayPackets(packets, hits)
+	return hits, nil
+}
+
 // lightAutomap lights the top row of buttons.
 func (l *Launchpad) lightAutomap(x uint8, velocity uint8) error {
 	_, err := l.Write([]byte{176, x + 104, velocity})
 	return err
 }
 
-// ReadButton reads a certain number of button preses from a launchpad.
-func (l *Launchpad) ReadButton(n int) ([]Button, error) {
-	buf := make([]byte, n*MessageSize)
-	if _, err := l.Read(buf); err != nil {
-		return nil, err
-	}
-	buttons := []Button{}
-	for i := 0; i < n; i++ {
-	}
-	return buttons, nil
-}
-
 // Reset turns off all the lights on the launchpad.
 func (l *Launchpad) Reset() error {
 	_, err := l.Write([]byte{0xb0, 0, 0})
 	return err
+}
+
+// relayPackets turns packets into hits.
+func relayPackets(packets <-chan midi.Packet, hits chan<- Hit) {
+	for packet := range packets {
+		var x, y uint8
+
+		if packet[0] == 176 {
+			// top row button
+			x = packet[1] - 104
+			y = 8
+		} else {
+			x = packet[1] % 16
+			y = (packet[1] - x) / 16
+		}
+		hits <- Hit{
+			X: int(x),
+			Y: int(y),
+		}
+	}
 }
