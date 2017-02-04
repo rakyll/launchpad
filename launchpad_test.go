@@ -31,11 +31,29 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// TestLight flashes the launchpad for a short time.
 func TestLight(t *testing.T) {
 	lp.Reset()
-	lp.Light(0, 0, launchpad.Color{
+
+	x, y := uint8(0), uint8(8)
+
+	lp.Light(x, y, launchpad.Color{
 		Green: launchpad.Full,
 		Red:   launchpad.Off,
 	})
 	time.Sleep(500 * time.Millisecond)
+
+	lp.Light(x, y, launchpad.Color{
+		Green: launchpad.Off,
+		Red:   launchpad.Full,
+	})
+	time.Sleep(500 * time.Millisecond)
+
+	lp.Light(x, y, launchpad.Color{
+		Green: launchpad.Full,
+		Red:   launchpad.Full,
+	})
+	time.Sleep(500 * time.Millisecond)
+
+	lp.Reset()
 }

@@ -30,8 +30,13 @@ type Color struct {
 // Open opens a connection Launchpad and initializes an input and output
 // stream to the currently connected device.
 // The deviceID is a system-specific string.
+//
 // On linux try
 //     amidi -l
+//
+// On mac try using https://github.com/briansorahan/coremidi
+//     coremidi -l
+//
 func Open(deviceID string) (*Launchpad, error) {
 	l := &Launchpad{
 		Device: &midi.Device{
