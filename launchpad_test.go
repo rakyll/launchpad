@@ -1,7 +1,6 @@
 package launchpad_test
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"testing"
@@ -13,12 +12,8 @@ import (
 var lp *launchpad.Launchpad
 
 func TestMain(m *testing.M) {
-	var deviceID string
-	flag.StringVar(&deviceID, "device", "hw:0,0,0", "System-specific MIDI device ID")
-	flag.Parse()
-
 	var err error
-	lp, err = launchpad.Open(deviceID)
+	lp, err = launchpad.Open()
 	if err != nil {
 		fmt.Printf("error initializing launchpad: %s\n", err)
 		os.Exit(1)

@@ -1,7 +1,12 @@
 // Package launchpad enables MIDI communication with a Novation Launchpad.
 package launchpad
 
-import "github.com/scgolang/midi"
+import (
+	"strings"
+
+	"github.com/pkg/errors"
+	"github.com/scgolang/midi"
+)
 
 // Brightness values.
 const (
@@ -14,6 +19,8 @@ const (
 // Launchpad represents a device with an input and output MIDI stream.
 type Launchpad struct {
 	*midi.Device
+
+	hits chan Hit
 }
 
 // Button represents a button on the Launchpad.
@@ -27,26 +34,29 @@ type Color struct {
 
 // Hit represents physical touches to Launchpad buttons.
 type Hit struct {
-	X uint8
-	Y uint8
+	X   uint8
+	Y   uint8
+	Err error
 }
 
 // Open opens a connection Launchpad and initializes an input and output
 // stream to the currently connected device.
-// The deviceID is a system-specific string.
-//
-// On linux try
-//     amidi -l
-//
-// On mac try using https://github.com/briansorahan/coremidi
-//     coremidi -l
-//
-func Open(deviceID string) (*Launchpad, error) {
-	l := &Launchpad{
-		Device: &midi.Device{
-			Name: deviceID,
-		},
+func Open() (*Launchpad, error) {
+	devices, err := midi.Devices()
+	if err != nil {
+		return nil, errors.Wrap(err, "listing MIDI devices")
 	}
+	var device *midi.Device
+	for _, d := range devices {
+		if strings.Contains(strings.ToLower(d.Name), "launchpad") {
+			device = d
+			break
+		}
+	}
+	if device == nil {
+		return nil, errors.New("launchpad not found")
+	}
+	l := &Launchpad{Device: device}
 	if err := l.Open(); err != nil {
 		return nil, err
 	}
@@ -55,18 +65,42 @@ func Open(deviceID string) (*Launchpad, error) {
 
 // Close closes the connection to the launchpad.
 func (l *Launchpad) Close() error {
-	return l.Device.Close()
+	if l.hits != nil {
+		close(l.hits)
+	}
+	return errors.Wrap(l.Device.Close(), "closing midi device")
 }
 
 // Hits returns a channel that emits when the launchpad buttons are hit.
 func (l *Launchpad) Hits() (<-chan Hit, error) {
+	if l.hits != nil {
+		return l.hits, nil
+	}
 	packets, err := l.Packets()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting packets channel")
 	}
 	hits := make(chan Hit)
 	go relayPackets(packets, hits)
+	l.hits = hits
 	return hits, nil
+}
+
+// Receive starts a new goroutine that sends hits on the provided channel.
+// Use this method to receive launchpad events on your own channel.
+// When the hits channel of the launchpad is closed, the hits channel passed in will also be closed.
+func (l *Launchpad) Receive(hits chan<- Hit) error {
+	hc, err := l.Hits()
+	if err != nil {
+		return errors.Wrap(err, "getting hits channel")
+	}
+	go func() {
+		for hit := range hc {
+			hits <- hit
+		}
+		close(hits)
+	}()
+	return nil
 }
 
 // Light lights the button at x,y with the given greend and red values.
@@ -82,7 +116,7 @@ func (l *Launchpad) Light(x, y uint8, color Color) error {
 		return l.lightAutomap(x, velocity)
 	}
 	_, err := l.Write([]byte{0x90, note, velocity})
-	return err
+	return errors.Wrap(err, "writing midi data")
 }
 
 // lightAutomap lights the top row of buttons.
@@ -100,18 +134,22 @@ func (l *Launchpad) Reset() error {
 // relayPackets turns packets into hits.
 func relayPackets(packets <-chan midi.Packet, hits chan<- Hit) {
 	for packet := range packets {
-		if packet[2] == 0 {
+		if packet.Err != nil {
+			hits <- Hit{Err: packet.Err}
+			continue
+		}
+		if packet.Data[2] == 0 {
 			continue
 		}
 		var x, y uint8
 
-		if packet[0] == 176 {
+		if packet.Data[0] == 176 {
 			// top row button
-			x = packet[1] - 104
+			x = packet.Data[1] - 104
 			y = 8
-		} else if packet[0] == 144 {
-			x = packet[1] % 16
-			y = (packet[1] - x) / 16
+		} else if packet.Data[0] == 144 {
+			x = packet.Data[1] % 16
+			y = (packet.Data[1] - x) / 16
 		} else {
 			continue
 		}
