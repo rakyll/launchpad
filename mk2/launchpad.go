@@ -91,8 +91,8 @@ func (l *Launchpad) Read() (hits []Hit, err error) {
 				x = evt.Data1 - 104
 				y = -1
 			} else {
-				x = evt.Data1 % 10
-				y = (evt.Data1 - x) / 10
+				x = evt.Data1%10 - 1
+				y = (8 - (evt.Data1-x)/10)
 			}
 			hits = append(hits, Hit{X: int(x), Y: int(y)})
 		}
