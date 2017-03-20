@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package launchpad provides interfaces to talk to
-// Novation Launchpads via MIDI in and out.
+// Package mk2 provides interfaces to talk to Novation Launchpad MK2 via MIDI in and out.
 package mk2
 
 import (
@@ -111,7 +110,7 @@ func (l *Launchpad) Light(x, y, color int) error {
 	return l.outputStream.WriteShort(0x90, led, int64(color))
 }
 
-// Turn off all buttons
+// Reset turns off all buttons.
 func (l *Launchpad) Reset() error {
 	// Sends a "light all ligts" SysEx command with 0 color.
 	return l.outputStream.WriteSysExBytes(portmidi.Time(), []byte{0xf0, 0x00, 0x20, 0x29, 0x02, 0x18, 0x0e, 0x00, 0xf7})
