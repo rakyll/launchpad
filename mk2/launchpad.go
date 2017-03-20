@@ -106,7 +106,7 @@ func (l *Launchpad) Read() (hits []Hit, err error) {
 // at https://global.novationmusic.com/sites/default/files/novation/downloads/10529/launchpad-mk2-programmers-reference-guide_0.pdf.
 func (l *Launchpad) Light(x, y, color int) error {
 	// TODO(jbd): Support top row.
-	led := int64((y+1)*10 + x + 1)
+	led := int64((8-y)*10 + x + 1)
 	return l.outputStream.WriteShort(0x90, led, int64(color))
 }
 
