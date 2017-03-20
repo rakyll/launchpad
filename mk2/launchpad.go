@@ -102,10 +102,12 @@ func (l *Launchpad) Read() (hits []Hit, err error) {
 }
 
 // Light lights the button at x,y with the given red, green, and blue values.
-// x and y are [0, 7], r, g, and b are [0, 63]
-func (l *Launchpad) Light(x, y, r, g, b int) error {
-	led := byte(y*10 + x)
-	return l.outputStream.WriteSysExBytes(portmidi.Time(), []byte{0xf0, 0x00, 0x20, 0x29, 0x02, 0x18, 0x0b, byte(led), byte(r), byte(g), byte(b), 0xf7})
+// x and y are [0, 7]. Color is [0, 128).
+// All available colors are documented and visualized at Launchpad's Programmers Guide
+// at https://global.novationmusic.com/sites/default/files/novation/downloads/10529/launchpad-mk2-programmers-reference-guide_0.pdf.
+func (l *Launchpad) Light(x, y, color int) error {
+	led := int64((y+1)*10 + x + 1)
+	return l.outputStream.WriteShort(0x90, led, int64(color))
 }
 
 // Turn off all buttons
