@@ -52,6 +52,8 @@ func Open() (*Launchpad, error) {
 	if outStream, err = portmidi.NewOutputStream(output, 1024, 0); err != nil {
 		return nil, err
 	}
+	// Switch to the session mode.
+	outStream.WriteSysExBytes(portmidi.Time(), []byte{0xf0, 0x00, 0x20, 0x29, 0x02, 0x18, 0x22, 0x00, 0xf7})
 	return &Launchpad{inputStream: inStream, outputStream: outStream}, nil
 }
 
