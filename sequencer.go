@@ -164,6 +164,9 @@ func (seq *Sequencer) Main(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case hit := <-hits:
+			if hit.Err != nil {
+				return hit.Err
+			}
 			if hit.X == gridX || hit.Y == gridY {
 				if err := seq.selectTrackFrom(hit); err != nil {
 					return err
