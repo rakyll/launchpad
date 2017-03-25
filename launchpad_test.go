@@ -9,7 +9,10 @@ import (
 	"github.com/scgolang/launchpad"
 )
 
-var lp *launchpad.Launchpad
+var (
+	lp  *launchpad.Launchpad
+	seq *launchpad.Sequencer
+)
 
 func TestMain(m *testing.M) {
 	var err error
@@ -18,6 +21,8 @@ func TestMain(m *testing.M) {
 		fmt.Printf("error initializing launchpad: %s\n", err)
 		os.Exit(1)
 	}
+	seq = lp.NewSequencer(mockSyncConnector, "127.0.0.1")
+
 	code := m.Run()
 
 	_ = lp.Reset()
