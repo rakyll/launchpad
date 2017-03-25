@@ -118,8 +118,8 @@ func (seq *Sequencer) invokeTriggers(step int32) error {
 // lightCurrentTrack lights the track buttons based on the currently selected track.
 func (seq *Sequencer) lightCurrentTrack() error {
 	var (
-		curX = uint8(seq.track % gridX)
-		curY = uint8(seq.track / gridY)
+		curX = seq.track % gridX
+		curY = seq.track / gridY
 	)
 	if err := seq.pad.Light(curX, gridY, stepColor); err != nil {
 		return err
@@ -200,7 +200,8 @@ func (seq *Sequencer) ReadFrom(r io.Reader) (int64, error) {
 func (seq *Sequencer) selectTrackFrom(hit Hit) error {
 	if hit.Y == gridY {
 		// We hit the top row.
-		curX := uint8(seq.track % gridX)
+		curX := seq.track % gridX
+
 		if curX == hit.X {
 			return nil // Nothing to do.
 		}
@@ -208,12 +209,13 @@ func (seq *Sequencer) selectTrackFrom(hit Hit) error {
 		seq.track = hit.X + seq.track - curX
 	} else if hit.X == gridX {
 		// Hit the column on the right side of the device.
-		curY := uint8(seq.track / gridY)
+		curY := seq.track / gridY
+
 		if curY == hit.Y {
 			return nil // Nothing to do.
 		}
 		// Set the current track.
-		seq.track = (hit.Y * gridY) + uint8(seq.track%gridX)
+		seq.track = (hit.Y * gridY) + (seq.track % gridX)
 	} else {
 		return errors.New("hit is not for track selection")
 	}
