@@ -182,7 +182,6 @@ func (seq *Sequencer) Main(ctx context.Context) error {
 			}
 		}
 	}
-	return nil
 }
 
 // Pulse receives pulses from oscsync.
@@ -193,8 +192,8 @@ func (seq *Sequencer) Pulse(pulse syncosc.Pulse) error {
 
 // ReadFrom reads the sequencer's state from an io.Reader.
 // TODO
-func (seq *Sequencer) ReadFrom(r io.Reader) error {
-	return nil
+func (seq *Sequencer) ReadFrom(r io.Reader) (int64, error) {
+	return 0, nil
 }
 
 // selectTrackFrom selects a track from the provided hit.
@@ -246,8 +245,8 @@ func (seq *Sequencer) toggle(hit Hit) error {
 
 // WriteTo writes the current sequencer data to w.
 // TODO
-func (seq *Sequencer) WriteTo(w io.Writer) error {
-	return nil
+func (seq *Sequencer) WriteTo(w io.Writer) (int64, error) {
+	return 0, nil
 }
 
 func hitToStep(hit Hit) uint8 {
