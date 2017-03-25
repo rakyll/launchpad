@@ -23,9 +23,6 @@ type Launchpad struct {
 	hits chan Hit
 }
 
-// Button represents a button on the Launchpad.
-type Button [2]int
-
 // Color represents the color of a launcpad button.
 type Color struct {
 	Green uint8
