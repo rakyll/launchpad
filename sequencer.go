@@ -120,13 +120,11 @@ func (seq *Sequencer) invokeTriggers() error {
 	trigs := []Trig{}
 
 	for track, steps := range seq.tracks {
-		for _, val := range steps {
-			if val > 0 {
-				trigs = append(trigs, Trig{
-					Track: uint8(track),
-					Value: val,
-				})
-			}
+		if val := steps[seq.step]; val > 0 {
+			trigs = append(trigs, Trig{
+				Track: uint8(track),
+				Value: val,
+			})
 		}
 	}
 	for _, trigger := range seq.triggers {
