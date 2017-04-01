@@ -33,7 +33,9 @@ type Trig struct {
 }
 
 // Trigger is a thing that can be triggered by a Sequencer.
+// Use the Track method to get notified of track selection.
 type Trigger interface {
+	Track(track uint8) error
 	Trig(step uint8, trigs []Trig) error
 }
 
@@ -257,6 +259,12 @@ func (seq *Sequencer) selectTrackFrom(hit Hit) error {
 	// Light the current track.
 	if err := seq.lightCurrentTrack(); err != nil {
 		return err
+	}
+	// Invoke all the trigs.
+	for _, trig := range seq.triggers {
+		if err := trig.Track(seq.track); err != nil {
+			return err
+		}
 	}
 	// Light all the steps of the current track.
 	return seq.lightTrackSteps()
