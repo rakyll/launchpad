@@ -2,7 +2,9 @@ package launchpad
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/scgolang/syncosc"
@@ -153,9 +155,14 @@ func (seq *Sequencer) Main(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := seq.syncConnector(ctx, seq, seq.syncHost); err != nil {
-		return err
-	}
+	// This func could block forever
+	go func() {
+		ctx, cancel := context.WithCancel(ctx)
+		if err := seq.syncConnector(ctx, seq, seq.syncHost); err != nil {
+			cancel()
+			fmt.Fprintf(os.Stderr, "connecting to sync source: %s", err.Error())
+		}
+	}()
 	if err := seq.lightCurrentTrack(); err != nil {
 		return err
 	}
