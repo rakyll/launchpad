@@ -40,7 +40,9 @@ type Trigger interface {
 // Sequencer is a simple sequencer controlled by a Novation Launchpad.
 type Sequencer struct {
 	pad           *Launchpad
+	prevStep      uint8
 	step          uint8
+	stepSkip      int
 	syncConnector syncosc.ConnectorFunc
 	syncHost      string
 	tick          chan syncosc.Pulse
@@ -64,18 +66,36 @@ func (seq *Sequencer) AddTrigger(t Trigger) {
 	seq.triggers = append(seq.triggers, t)
 }
 
-// advance advances the sequencer.
-func (seq *Sequencer) advance(step int32) error {
+// advance advances the internal counter of the sequencer.
+// It returns the true if the sequencer's internal counter has actually advanced
+// and false otherwise.
+func (seq *Sequencer) advance(step int32) bool {
+	if seq.stepSkip <= 1 {
+		// step increments the sequencer's counter directly.
+		seq.prevStep = seq.step
+		seq.step = uint8(step % gridSize)
+		return true
+	}
+	// This step has no effect.
+	if step%int32(seq.stepSkip) != 0 {
+		return false
+	}
+	// step does not increment the sequencer's counter directly
+	// we increment it based on the previous value
+	seq.prevStep = seq.step
+	seq.step = uint8((seq.step + 1) % gridSize)
+	return true
+}
+
+// advanceLights advances the lights on the launchpad according to the
+// internal counter of the sequencer.
+func (seq *Sequencer) advanceLights() error {
 	var (
-		prev      = seq.step
-		prevValue = seq.tracks[seq.track][prev]
-		prevHit   = stepToHit(prev)
+		prevValue = seq.tracks[seq.track][seq.prevStep]
+		prevHit   = stepToHit(seq.prevStep)
+		hit       = stepToHit(seq.step)
 	)
-	seq.step = uint8(step % gridSize)
-
-	hit := stepToHit(seq.step)
-
-	if prev == seq.step {
+	if seq.prevStep == seq.step {
 		// We just started the sequencer and the first pulse
 		// is the beginning of the sequence.
 		return seq.pad.Light(0, 0, posColor)
@@ -96,7 +116,7 @@ func (seq *Sequencer) advance(step int32) error {
 }
 
 // invokeTriggers invokes the sequencer's triggers for the provided step.
-func (seq *Sequencer) invokeTriggers(step int32) error {
+func (seq *Sequencer) invokeTriggers() error {
 	trigs := []Trig{}
 
 	for track, steps := range seq.tracks {
@@ -110,7 +130,7 @@ func (seq *Sequencer) invokeTriggers(step int32) error {
 		}
 	}
 	for _, trigger := range seq.triggers {
-		if err := trigger.Trig(uint8(step%gridSize), trigs); err != nil {
+		if err := trigger.Trig(uint8(seq.step), trigs); err != nil {
 			return err
 		}
 	}
@@ -184,10 +204,13 @@ func (seq *Sequencer) Main(ctx context.Context) error {
 				return err
 			}
 		case pulse := <-seq.tick:
-			if err := seq.advance(pulse.Count); err != nil {
+			if advanced := seq.advance(pulse.Count); !advanced {
+				continue
+			}
+			if err := seq.advanceLights(); err != nil {
 				return err
 			}
-			if err := seq.invokeTriggers(pulse.Count); err != nil {
+			if err := seq.invokeTriggers(); err != nil {
 				return err
 			}
 		}
@@ -241,6 +264,17 @@ func (seq *Sequencer) selectTrackFrom(hit Hit) error {
 	return seq.lightTrackSteps()
 }
 
+// SetResolution sets the clock resolution for the sequencer.
+// This is set as a human-readable note resolution, e.g. 16th or 32nd.
+func (seq *Sequencer) SetResolution(resolution string) error {
+	res, ok := resolutionMap[resolution]
+	if !ok {
+		return errors.Errorf("unrecognized resolution: %s", resolution)
+	}
+	seq.stepSkip = res
+	return nil
+}
+
 // toggle toggles the button that has been hit.
 func (seq *Sequencer) toggle(hit Hit) error {
 	var (
@@ -270,4 +304,10 @@ func stepToHit(step uint8) Hit {
 		X: step % gridX,
 		Y: step / 8,
 	}
+}
+
+var resolutionMap = map[string]int{
+	"16th": 6,
+	"32nd": 3,
+	"96th": 1,
 }
