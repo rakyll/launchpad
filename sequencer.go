@@ -232,6 +232,9 @@ func (seq *Sequencer) lightTrackSteps() error {
 // If the mode is changed then it will be returned with a nil error.
 // The only other time this func returns is when there is an error.
 func (seq *Sequencer) loopMutes(ctx context.Context, hits <-chan Hit) (Mode, error) {
+	if err := seq.lightMutes(); err != nil {
+		return 0, err
+	}
 	for {
 		select {
 		case <-ctx.Done():
@@ -244,7 +247,13 @@ func (seq *Sequencer) loopMutes(ctx context.Context, hits <-chan Hit) (Mode, err
 				if err := seq.setCurrentTrackFrom(hit); err != nil {
 					return 0, err
 				}
+				if err := seq.pad.Reset(); err != nil {
+					return 0, err
+				}
 				if err := seq.lightCurrentTrack(); err != nil {
+					return 0, err
+				}
+				if err := seq.lightMutes(); err != nil {
 					return 0, err
 				}
 				continue
@@ -320,7 +329,7 @@ func (seq *Sequencer) Main(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	// This func could block forever
+	// This func could block forever.
 	go func() {
 		ctx, cancel := context.WithCancel(ctx)
 		if err := seq.syncConnector(ctx, seq, seq.syncHost); err != nil {

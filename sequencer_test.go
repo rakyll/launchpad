@@ -10,7 +10,7 @@ import (
 )
 
 func TestSequencer(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	done := make(chan struct{})
@@ -22,8 +22,12 @@ func TestSequencer(t *testing.T) {
 	}()
 	time.Sleep(20 * time.Second)
 	seq.SetMode(launchpad.ModeMutes)
+
 	time.Sleep(20 * time.Second)
 	seq.SetMode(launchpad.ModePattern)
+
+	time.Sleep(20 * time.Second)
+
 	select {
 	case <-done:
 	case <-time.After(2 * time.Second):
