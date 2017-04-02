@@ -5,14 +5,29 @@ import (
 	"testing"
 	"time"
 
+	"github.com/scgolang/launchpad"
 	"github.com/scgolang/syncosc"
 )
 
 func TestSequencer(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
-	if err := seq.Main(ctx); err != nil && err != context.DeadlineExceeded {
-		t.Fatal(err)
+
+	done := make(chan struct{})
+	go func() {
+		if err := seq.Main(ctx); err != nil && err != context.DeadlineExceeded {
+			t.Fatal(err)
+		}
+		close(done)
+	}()
+	time.Sleep(20 * time.Second)
+	seq.SetMode(launchpad.ModeMutes)
+	time.Sleep(20 * time.Second)
+	seq.SetMode(launchpad.ModePattern)
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timeout")
 	}
 }
 
