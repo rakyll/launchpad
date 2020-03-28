@@ -4,20 +4,20 @@ import (
 	"log"
 	"time"
 
-	"github.com/rakyll/launchpad/mk2"
+	launchpad "github.com/jmacd/launchmidi/launchpad/mk2"
 )
 
 func main() {
-	pad, err := mk2.Open()
+	pad, err := launchpad.Open()
 	if err != nil {
 		log.Fatalf("error while openning connection to launchpad: %v", err)
 	}
 	defer pad.Close()
 
 	var color int
+
 	render := func(i, j int) {
 		pad.Reset()
-		// Turn all buttons to bright red.
 		for i := 0; i < 8; i++ {
 			for j := 0; j < 8; j++ {
 				pad.Light(i, j, color)

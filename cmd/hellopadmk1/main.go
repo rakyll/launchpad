@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/rakyll/launchpad"
+	launchpad "github.com/jmacd/launchmidi/launchpad/mk1"
 )
 
 func main() {

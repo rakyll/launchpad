@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package launchpad provides interfaces to talk to Novation Launchpads via MIDI in and out.
-package launchpad
+package mk1
 
 import (
 	"errors"
