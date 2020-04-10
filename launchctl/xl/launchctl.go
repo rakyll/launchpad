@@ -12,33 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package launchctl provides interfaces to talk to Novation Launch Control XL via MIDI in and out.
-package launchctl
+// Package xl provides interfaces to talk to Novation Launch Control XL via MIDI in and out.
+package xl
 
 import (
+	"context"
 	"errors"
-	"strings"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/rakyll/portmidi"
 )
 
-// Launchpad represents a device with an input and output MIDI stream.
-type Launchpad struct {
+const (
+	MIDI_Status_Note_Off       = 0x80
+	MIDI_Status_Note_On        = 0x90
+	MIDI_Status_Control_Change = 0xb0
+	MIDI_Status_Code_Mask      = 0xf0
+	MIDI_Channel_Mask          = 0x0f
+
+	MaxEventsPerPoll = 1024
+	ReadBufferDepth  = 16
+	PollingPeriod    = 10 * time.Millisecond
+	NumChannels      = 16
+	NumControls      = 6*8 + 4 + 4
+)
+
+type Value uint8
+
+// LaunchControl represents a device with an input and output MIDI stream.
+type LaunchControl struct {
 	inputStream  *portmidi.Stream
 	outputStream *portmidi.Stream
+
+	lock sync.Mutex
+
+	value [NumChannels][NumControls]Value
 }
 
-// Hit represents physical touches to Launchpad buttons.
-type Hit struct {
-	X int
-	Y int
-}
-
-// Open opens a connection Launchpad and initializes an input and output
-// stream to the currently connected device. If there are no
-// devices are connected, it returns an error.
-func Open() (*Launchpad, error) {
+// Open opens a connection to the XL and initializes an input and
+// output stream to the currently connected device. If there are no
+// devices connected, it returns an error.
+func Open() (*LaunchControl, error) {
 	input, output, err := discover()
 	if err != nil {
 		return nil, err
@@ -51,85 +67,179 @@ func Open() (*Launchpad, error) {
 	if outStream, err = portmidi.NewOutputStream(output, 1024, 0); err != nil {
 		return nil, err
 	}
-	// Switch to the session mode.
-	outStream.WriteSysExBytes(portmidi.Time(), []byte{0xf0, 0x00, 0x20, 0x29, 0x02, 0x18, 0x22, 0x00, 0xf7})
-	return &Launchpad{inputStream: inStream, outputStream: outStream}, nil
+	lc := &LaunchControl{inputStream: inStream, outputStream: outStream}
+	for ch := 0; ch < NumChannels; ch++ {
+		for cc := 0; cc < NumControls; cc++ {
+			lc.value[ch][cc] = 128
+		}
+	}
+	return lc, nil
 }
 
-// Listen listens the input stream for hits.
-func (l *Launchpad) Listen() <-chan Hit {
-	ch := make(chan Hit)
-	go func(pad *Launchpad, ch chan Hit) {
+// Start begins listening for updates.
+func (l *LaunchControl) Start(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
+
+	defer cancel()
+	ch := make(chan []portmidi.Event, ReadBufferDepth)
+
+	go func() {
+		l.Buffer(0, 0)
+		l.Reset(0, 0+1+1<<4)
+		l.Buffer(0, 1)
+		l.Reset(0, 0+0+0<<4)
 		for {
-			// sleep for a while before the new polling tick,
-			// otherwise operation is too intensive and blocking
-			time.Sleep(10 * time.Millisecond)
-			hits, err := pad.Read()
+			// @@@
+			time.Sleep(time.Second / 2)
+			l.Flash(0, true)
+			time.Sleep(time.Second / 2)
+			l.Flash(0, false)
+		}
+
+	}()
+	go func() {
+		for {
+			// return when canceled
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+			// TODO: Is there a portmidi or libusb function that lets us poll?
+			time.Sleep(PollingPeriod)
+
+			evts, err := l.inputStream.Read(MaxEventsPerPoll)
 			if err != nil {
-				continue
+				fmt.Println("MIDI error", err)
+				cancel()
+				return
 			}
-			for i := range hits {
-				ch <- hits[i]
+			if len(evts) != 0 {
+				ch <- evts
 			}
 		}
-	}(l, ch)
-	return ch
-}
-
-// Read reads hits from the input stream. It returns max 64 hits for each read.
-func (l *Launchpad) Read() (hits []Hit, err error) {
-	var evts []portmidi.Event
-	if evts, err = l.inputStream.Read(1024); err != nil {
-		return
-	}
-	for _, evt := range evts {
-		if evt.Data2 > 0 {
-			var x, y int64
-			if evt.Status == 176 {
-				// top row button
-				// FIXME
-				x = evt.Data1 - 104
-				y = -1
-			} else {
-				x = evt.Data1%10 - 1
-				y = (8 - (evt.Data1-x)/10)
+	}()
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case evts := <-ch:
+				for _, evt := range evts {
+					l.event(evt)
+				}
 			}
-			hits = append(hits, Hit{X: int(x), Y: int(y)})
 		}
+	}()
+
+	select {
+	case <-ctx.Done():
 	}
-	return
 }
 
-// Light lights the button at x,y with the given red, green, and blue values.
-// x and y are [0, 7]. Color is [0, 128).
-// All available colors are documented and visualized at Launchpad's Programmers Guide
-// at https://global.novationmusic.com/sites/default/files/novation/downloads/10529/launchpad-mk2-programmers-reference-guide_0.pdf.
-func (l *Launchpad) Light(x, y, color int) error {
-	// TODO(jbd): Support top row.
-	led := int64((8-y)*10 + x + 1)
-	return l.outputStream.WriteShort(0x90, led, int64(color))
+func (l *LaunchControl) event(evt portmidi.Event) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
+	midiChannel := Value(evt.Status & MIDI_Channel_Mask)
+
+	switch evt.Status & MIDI_Status_Code_Mask {
+	case MIDI_Status_Control_Change:
+		//fmt.Println("CC Chan", midiChannel, evt.Data1, evt.Data2)
+		l.controlChange(midiChannel, Value(evt.Data1), Value(evt.Data2))
+	case MIDI_Status_Note_On, MIDI_Status_Note_Off:
+		//fmt.Println("CC Note", midiChannel, evt.Data1, evt.Data2)
+		l.noteChange(midiChannel, Value(evt.Data1), Value(evt.Data2))
+	}
+
 }
 
-// Reset turns off all buttons.
-func (l *Launchpad) Reset() error {
-	// Sends a "light all ligts" SysEx command with 0 color.
-	return l.outputStream.WriteSysExBytes(portmidi.Time(), []byte{0xf0, 0x00, 0x20, 0x29, 0x02, 0x18, 0x0e, 0x00, 0xf7})
+func (l *LaunchControl) controlChange(midiChannel, data1, data2 Value) {
+	switch {
+	case 13 <= data1 && data1 <= 20: // 0ffset 0
+		l.value[midiChannel][data1-13+0] = data2
+
+	case 29 <= data1 && data1 <= 36: // Offset 8
+		l.value[midiChannel][data1-29+8] = data2
+
+	case 49 <= data1 && data1 <= 56: // Offset 16
+		l.value[midiChannel][data1-49+16] = data2
+
+	case 77 <= data1 && data1 <= 84: // Offset 24
+		l.value[midiChannel][data1-77+24] = data2
+
+	case 104 <= data1 && data1 <= 107: // Offset 48
+		l.value[midiChannel][data1-104+48] = data2
+	}
 }
 
-func (l *Launchpad) Close() error {
+func (l *LaunchControl) noteChange(midiChannel, data1, data2 Value) {
+	switch {
+	case 41 <= data1 && data1 <= 44: // 0ffset 32
+		l.value[midiChannel][data1-41+32] = data2
+
+	case 57 <= data1 && data1 <= 60: // Offset 36
+		l.value[midiChannel][data1-57+36] = data2
+
+	case 73 <= data1 && data1 <= 76: // Offset 40
+		l.value[midiChannel][data1-73+40] = data2
+
+	case 89 <= data1 && data1 <= 92: // Offset 44
+		l.value[midiChannel][data1-89+44] = data2
+
+	case 105 <= data1 && data1 <= 108: // Offset 52
+		l.value[midiChannel][data1-105+52] = data2
+	}
+}
+
+// Reset sends a "light all lights" SysEx command with color value.
+func (l *LaunchControl) Reset(tmpl, color int) error {
+
+	data := []byte{0xf0, 0x00, 0x20, 0x29, 0x02, 0x11, 0x78, byte(tmpl)}
+
+	for i := 0; i < 48; i++ {
+		data = append(data, byte(i), byte(color))
+	}
+
+	data = append(data, 0xf7)
+
+	return l.outputStream.WriteSysExBytes(portmidi.Time(), data)
+}
+
+func (l *LaunchControl) Buffer(tmpl, b int) error {
+	var data int64
+	if b == 0 {
+		data = 0x21 + 0x8
+	} else {
+		data = 0x24 + 0x8
+	}
+	return l.outputStream.WriteShort(0xb0+int64(tmpl), 0, data)
+}
+
+func (l *LaunchControl) Flash(tmpl int, on bool) error {
+	var data int64
+	if on {
+		data = 0x28 // @@@
+	} else {
+		data = 0x20 // @@@
+	}
+	return l.outputStream.WriteShort(0xb0+int64(tmpl), 0, data)
+}
+
+func (l *LaunchControl) Close() error {
 	l.inputStream.Close()
 	l.outputStream.Close()
 	return nil
 }
 
-// discovers the currently connected Launchpad device
+// discovers the currently connected LaunchControl device
 // as a MIDI device.
 func discover() (input portmidi.DeviceID, output portmidi.DeviceID, err error) {
 	in := -1
 	out := -1
 	for i := 0; i < portmidi.CountDevices(); i++ {
 		info := portmidi.Info(portmidi.DeviceID(i))
-		if strings.Contains(info.Name, "Launchpad MK2") {
+		if info.Name == "Launch Control XL" {
 			if info.IsInputAvailable {
 				in = i
 			}
@@ -139,7 +249,7 @@ func discover() (input portmidi.DeviceID, output portmidi.DeviceID, err error) {
 		}
 	}
 	if in == -1 || out == -1 {
-		err = errors.New("launchpad: no launchpad is connected")
+		err = errors.New("launchctl: no launch control xl is connected")
 	} else {
 		input = portmidi.DeviceID(in)
 		output = portmidi.DeviceID(out)
