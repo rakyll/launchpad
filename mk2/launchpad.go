@@ -29,6 +29,13 @@ type Launchpad struct {
 	outputStream *portmidi.Stream
 }
 
+// Color represents an RGB color. Color values should be [0, 64) for the Launchpad Mk2
+type Color struct {
+	R int
+	G int
+	B int
+}
+
 // Hit represents physical touches to Launchpad buttons.
 type Hit struct {
 	X int
@@ -100,9 +107,9 @@ func (l *Launchpad) Read() (hits []Hit, err error) {
 	return
 }
 
-// Light lights the button at x,y with the given red, green, and blue values.
+// Light lights the button at x,y with the given palette color.
 // x and y are [0, 7]. Color is [0, 128).
-// All available colors are documented and visualized at Launchpad's Programmers Guide
+// All available colors are documented and visualized in the Launchpad's Programmers Guide
 // at https://global.novationmusic.com/sites/default/files/novation/downloads/10529/launchpad-mk2-programmers-reference-guide_0.pdf.
 func (l *Launchpad) Light(x, y, color int) error {
 	// TODO(jbd): Support top row.
@@ -110,9 +117,21 @@ func (l *Launchpad) Light(x, y, color int) error {
 	return l.outputStream.WriteShort(0x90, led, int64(color))
 }
 
-// Reset turns off all buttons.
-func (l *Launchpad) Reset() error {
-	// Sends a "light all ligts" SysEx command with 0 color.
+// LightRGB lights the button at x,y with the given rgb color.
+// x and y are [0, 7]. RGB color values are [0, 64).
+// This method is documented in the Launchpad's Programmers Guide under the "RGB Mode" heading.
+// at https://global.novationmusic.com/sites/default/files/novation/downloads/10529/launchpad-mk2-programmers-reference-guide_0.pdf.
+func (l *Launchpad) LightRGB(x, y int, c Color) error {
+	// This method uses RGB Mode on the Launchpad Mk2.
+	// RGB colors are set using SysEx extended mode messages.
+	led := byte((8-y)*10 + x + 1)
+	return l.outputStream.WriteSysExBytes(portmidi.Time(), []byte{0xf0, 0x00, 0x20, 0x29, 0x02, 0x18, 0x0b, led, byte(c.R), byte(c.G), byte(c.B), 0xf7})
+}
+
+// Clear turns off all the LEDs on the Launchpad.
+func (l *Launchpad) Clear() error {
+	// Sends a "light all lights" SysEx command with 0 color.
+	// This is documented in the Launchpad's Programmers Guide under the "Light all LEDs using SysEx" heading.
 	return l.outputStream.WriteSysExBytes(portmidi.Time(), []byte{0xf0, 0x00, 0x20, 0x29, 0x02, 0x18, 0x0e, 0x00, 0xf7})
 }
 
