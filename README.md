@@ -77,6 +77,32 @@ for {
 	}
 }
 ~~~
+
+## Demo: Write a scrolling text
+
+A simple program to write text on the launchpad
+
+~~~ go
+pad, err := launchpad.Open()
+if err != nil {
+    log.Fatal(err)
+}
+defer pad.Close()
+
+pad.Clear()
+
+// Send Text-Loop
+pad.Text(3, 0).Add(7, "Hello World!").Perform()
+
+ch := pad.Listen()
+for {
+    hit := <-ch
+
+    if hit.IsScrollTextEndMarker() {
+        log.Printf("Scrolling text is ended now.")
+    }
+}
+~~~
     
 ## License
     Copyright 2013 Google Inc. All Rights Reserved.

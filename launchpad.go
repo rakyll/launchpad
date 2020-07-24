@@ -35,6 +35,13 @@ type Hit struct {
 	Y int
 }
 
+// IsScrollTextEndMarker checks if this hit is an meta event which tells you,
+// that the scrolling text has been finished. On looping scrolling text you
+// will get such an event every time a loop iteration ends!
+func (h Hit) IsScrollTextEndMarker() bool {
+	return h.X == -104 && h.Y == 8
+}
+
 // Open opens a connection Launchpad and initializes an input and output
 // stream to the currently connected device. If there are no
 // devices are connected, it returns an error.
