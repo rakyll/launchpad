@@ -41,7 +41,7 @@ type Hit struct {
 // stream to the currently connected device. If there are no
 // devices are connected, it returns an error.
 func Open() (*Launchpad, error) {
-	fmt.Printf("Open Mk2\n")
+	fmt.Printf("Open Mk3\n")
 	input, output, err := discover()
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func discover() (input portmidi.DeviceID, output portmidi.DeviceID, err error) {
 	for i := 0; i < portmidi.CountDevices(); i++ {
 		info := portmidi.Info(portmidi.DeviceID(i))
 		fmt.Printf("I AM %s\n", info.Name)
-		if strings.Contains(info.Name, "Launchpad MK8") {
+		if strings.Contains(info.Name, "Launchpad MK3") {
 			if info.IsInputAvailable {
 				in = i
 			}
