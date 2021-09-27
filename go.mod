@@ -1,4 +1,4 @@
-module github.com/rakyll/launchpad
+module github.com/dhowlett99/launchpad
 
 go 1.14
 
