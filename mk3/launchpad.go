@@ -29,7 +29,6 @@ import (
 type Launchpad struct {
 	inputStream  *portmidi.Stream
 	outputStream *portmidi.Stream
-	Block        bool
 }
 
 // Hit represents physical touches to Launchpad buttons.
