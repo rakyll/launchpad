@@ -29,6 +29,7 @@ import (
 type Launchpad struct {
 	inputStream  *portmidi.Stream
 	outputStream *portmidi.Stream
+	Block        bool
 }
 
 // Hit represents physical touches to Launchpad buttons.
@@ -63,19 +64,32 @@ func (l *Launchpad) Listen() <-chan Hit {
 	ch := make(chan Hit)
 	go func(pad *Launchpad, ch chan Hit) {
 		for {
-			// sleep for a while before the new polling tick,
-			// otherwise operation is too intensive and blocking
-			time.Sleep(10 * time.Millisecond)
-			hits, err := pad.Read()
-			if err != nil {
-				continue
-			}
-			for i := range hits {
-				ch <- hits[i]
+
+			if !l.Block {
+				// sleep for a while before the new polling tick,
+				// otherwise operation is too intensive and blocking
+				time.Sleep(10 * time.Millisecond)
+				hits, err := pad.Read()
+				if err != nil {
+					continue
+				}
+				for i := range hits {
+					ch <- hits[i]
+				}
+			} else {
+				pad.Read() // Throw away whilst we're blocked.
 			}
 		}
 	}(l, ch)
 	return ch
+}
+
+func (l *Launchpad) BlockKeys(block bool) {
+	l.Block = block
+}
+
+func (l *Launchpad) IsBlocked() bool {
+	return l.Block
 }
 
 // Read reads hits from the input stream. It returns max 64 hits for each read.
