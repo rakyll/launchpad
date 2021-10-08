@@ -148,11 +148,12 @@ func discover() (input portmidi.DeviceID, output portmidi.DeviceID, err error) {
 			}
 		}
 	}
+
+	deviceIn := portmidi.DeviceID(in)
+	deviceOut := portmidi.DeviceID(out)
 	if in == -1 || out == -1 {
-		err = errors.New("launchpad: no launchpad is connected")
-	} else {
-		input = portmidi.DeviceID(in)
-		output = portmidi.DeviceID(out)
+		return deviceIn, deviceOut, errors.New("launchpad: no launchpad is connected")
 	}
-	return
+
+	return deviceIn, deviceOut, nil
 }
